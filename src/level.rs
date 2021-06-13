@@ -1,11 +1,11 @@
 use super::player;
 use std::fs;
 
-pub static WALL             : char = '#';
-pub static BOX              : char = '$';
-pub static BOX_ON_GOAL      : char = '*';
-pub static GOAL             : char = '.';
-pub static FLOOR            : char = ' ';
+pub const WALL             : char = '#';
+pub const BOX              : char = '$';
+pub const BOX_ON_GOAL      : char = '*';
+pub const GOAL             : char = '.';
+pub const FLOOR            : char = ' ';
 
 pub struct Level {
     pub width: u32,
@@ -100,32 +100,28 @@ pub fn read_level(level_id: &u32) -> Level {
             width = current_width;
         }
 
-        // set starting position
-        if current_char == player::PLAYER_ON_GOAL || current_char == player::PLAYER {
-            start_x = (current_width - 1) as i32;
-            start_y = height as i32;
-        }
+        match current_char {
+            player::PLAYER_ON_GOAL | player::PLAYER => { // setting user char & starting position
+                current_char = FLOOR;
+                if current_char == player::PLAYER_ON_GOAL {
+                    current_char = GOAL;
+                    player_char = player::PLAYER_ON_GOAL;
+                }
 
-        // set the player character if it spawns on a crate spot
-        if current_char == player::PLAYER_ON_GOAL {
-            current_char = GOAL;
-            player_char = player::PLAYER_ON_GOAL;
-        }
+                start_x = (current_width - 1) as i32;
+                start_y = height as i32;
+            }
 
-        // set the player character if it spawns on an empty char
-        if current_char == player::PLAYER {
-            current_char = FLOOR;
-        }
+            BOX => { // count the number of boxes
+                box_counter += 1;
+            }
 
-        // count boxes
-        if current_char == BOX {
-            box_counter += 1;
-        }
+            '\n' => { // count the height of the map
+                height += 1;
+                current_width = 0;
+            }
 
-        // count lines
-        if current_char == '\n' {
-            height += 1;
-            current_width = 0;
+            _ => {} // ignore any useless chars
         }
 
         terrain_vec.push(current_char);

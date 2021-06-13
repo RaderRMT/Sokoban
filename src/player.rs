@@ -1,14 +1,14 @@
 use super::level;
 use super::replay;
 
-pub static PLAYER_ON_GOAL   : char = '+';
-pub static PLAYER           : char = '@';
+pub const PLAYER_ON_GOAL   : char = '+';
+pub const PLAYER           : char = '@';
 
-static BOX      : u8 = 0b0001_0000;
-static FORWARD  : u8 = 0b0000_1000;
-static LEFT     : u8 = 0b0000_0100;
-static BACKWARD : u8 = 0b0000_0010;
-static RIGHT    : u8 = 0b0000_0001;
+const BOX      : u8 = 0b0001_0000;
+const FORWARD  : u8 = 0b0000_1000;
+const LEFT     : u8 = 0b0000_0100;
+const BACKWARD : u8 = 0b0000_0010;
+const RIGHT    : u8 = 0b0000_0001;
 
 pub struct Player {
     pub x: i32,
