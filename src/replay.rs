@@ -4,7 +4,7 @@ pub struct Replay {
 
 impl Replay {
     pub fn pop(&mut self) -> u8 {
-        self.movement_stack.pop().expect("testing")
+        self.movement_stack.pop().expect("error")
     }
 
     pub fn push(&mut self, movement: u8) {

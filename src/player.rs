@@ -16,7 +16,7 @@ pub struct Player {
     pub player_char: char
 }
 
-pub fn move_player(level: &mut level::Level, replay: &mut replay::Replay, direction: Vec<char>) {
+pub fn move_player(running: &mut bool, step_counter: &mut u32, level: &mut level::Level, replay: &mut replay::Replay, direction: Vec<char>) {
     let mut new_pos_x = level.player.x as i32;
     let mut new_pos_y = level.player.y as i32;
 
@@ -27,87 +27,91 @@ pub fn move_player(level: &mut level::Level, replay: &mut replay::Replay, direct
             return
         }
 
-        if direction[i] == 'p' {
-            super::stop();
-            return
-        }
-
-        if direction[i] == 'a' {
-            if !replay.is_empty() {
-                movement = replay.pop();
-
-                let offset_x = ((movement & LEFT) >> 2) as i32 - (movement & RIGHT) as i32;
-                let offset_y = ((movement & FORWARD) >> 3) as i32 - ((movement & BACKWARD) as i32 >> 1) ;
-
-                if is_set(movement, BOX) {
-                    move_box(level, level.player.x - offset_x, level.player.y - offset_y, offset_x, offset_y);
-                }
-
-                level.player.x += offset_x;
-                level.player.y += offset_y;
-
-                unsafe {
-                    super::STEP_COUNTER -= 1;
-                }
-
-                level.player.player_char = PLAYER;
-                if level.get_tile_at(level.player.x, level.player.y) == level::GOAL {
-                    level.player.player_char = PLAYER_ON_GOAL;
-                }
+        match direction[i] {
+            'p' => {
+                *running = false;
+                return
             }
-            
-            continue;
-        }
 
-        if direction[i] == 'z' {
-            new_pos_y -= 1;
-            movement |= FORWARD;
-        }
+            'a' => {
+                if !replay.is_empty() {
+                    movement = replay.pop();
+    
+                    let offset_x = ((movement & LEFT) >> 2) as i32 - (movement & RIGHT) as i32;
+                    let offset_y = ((movement & FORWARD) >> 3) as i32 - ((movement & BACKWARD) as i32 >> 1);
+    
+                    if is_set(movement, BOX) {
+                        move_box(level, level.player.x - offset_x, level.player.y - offset_y, offset_x, offset_y);
+                    }
+    
+                    level.player.x += offset_x;
+                    level.player.y += offset_y;
+    
+                    *step_counter -= 1;
+    
+                    level.player.player_char = PLAYER;
+                    if level.get_tile_at(level.player.x, level.player.y) == level::GOAL {
+                        level.player.player_char = PLAYER_ON_GOAL;
+                    }
+                }
+                
+                continue;
+            }
 
-        if direction[i] == 'q' {
-            new_pos_x -= 1;
-            movement |= LEFT;
-        }
+            'z' => {
+                new_pos_y -= 1;
+                movement |= FORWARD;
+            }
 
-        if direction[i] == 's' {
-            new_pos_y += 1;
-            movement |= BACKWARD;
-        }
+            'q' => {
+                new_pos_x -= 1;
+                movement |= LEFT;
+            }
 
-        if direction[i] == 'd' {
-            new_pos_x += 1;
-            movement |= RIGHT;
+            's' => {
+                new_pos_y += 1;
+                movement |= BACKWARD;
+            }
+
+            'd' => {
+                new_pos_x += 1;
+                movement |= RIGHT;
+            }
+
+            _ => {}
         }
 
         let tile: char = level.get_tile_at(new_pos_x, new_pos_y);
-        if tile == level::WALL {
-            new_pos_x = level.player.x;
-            new_pos_y = level.player.y;
-        }
-
-        if tile == level::BOX || tile == level::BOX_ON_GOAL {
-            if !move_box(level, new_pos_x, new_pos_y, new_pos_x - level.player.x, new_pos_y - level.player.y) {
+        match tile {
+            level::WALL => {
                 new_pos_x = level.player.x;
                 new_pos_y = level.player.y;
-            } else {
-                movement |= BOX;
             }
-        }
 
-        if tile == level::GOAL {
-            level.player.player_char = PLAYER_ON_GOAL;
-        }
-
-        if tile == level::FLOOR {
-            level.player.player_char = PLAYER;
-        }
-
-        unsafe {
-            if movement != 0 {
-                if level.player.x != new_pos_x || level.player.y != new_pos_y {
-                    replay.push(movement);
-                    super::STEP_COUNTER += 1;
+            level::BOX | level::BOX_ON_GOAL => {
+                if !move_box(level, new_pos_x, new_pos_y, new_pos_x - level.player.x, new_pos_y - level.player.y) {
+                    new_pos_x = level.player.x;
+                    new_pos_y = level.player.y;
+                } else {
+                    movement |= BOX;
                 }
+            }
+
+            level::GOAL => {
+                level.player.player_char = PLAYER_ON_GOAL;
+            }
+
+            level::FLOOR => {
+                level.player.player_char = PLAYER;
+            }
+
+            _ => {}
+        }
+
+        if movement != 0 {
+            if level.player.x != new_pos_x || level.player.y != new_pos_y {
+                replay.push(movement);
+                *step_counter += 1;
             }
         }
 

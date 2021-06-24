@@ -2,40 +2,38 @@ mod level;
 mod player;
 mod replay;
 
-static mut RUNNING: bool = true;
-static mut STEP_COUNTER: u32 = 0;
-
 fn main() {
     let mut level_counter = 0;
 
     let mut level = level::read_level(&level_counter);
     let mut replay = replay::new();
 
-    unsafe {
-        while RUNNING {
-            cls();
-            
-            // if we win, we change level
-            if level.box_left == 0 {
-                level.draw_level();
-                println!("Well played! You completed this level in {} steps!\n", STEP_COUNTER);
-                println!("Press Enter to continue\n");
+    let mut running: bool = true;
+    let mut step_counter: u32 = 0;
 
-                input();
+    while running {
+        cls();
 
-                level_counter += 1;
-                level = level::read_level(&level_counter);
-                STEP_COUNTER = 0;
-
-                replay.clear();
-                continue;
-            }
-
+        // if we win, we change level
+        if level.box_left == 0 {
             level.draw_level();
-            println!("Steps: {}\n", STEP_COUNTER);
-            
-            player::move_player(&mut level, &mut replay, to_vec(input()));
+            println!("Well played! You completed this level in {} steps!\n", step_counter);
+            println!("Press Enter to continue\n");
+
+            input();
+
+            level_counter += 1;
+            level = level::read_level(&level_counter);
+            step_counter = 0;
+
+            replay.clear();
+            continue;
         }
+
+        level.draw_level();
+        println!("Steps: {}\n", step_counter);
+        
+        player::move_player(&mut running, &mut step_counter, &mut level, &mut replay, to_vec(input()));
     }
 }
 
@@ -56,10 +54,4 @@ fn to_vec(string: String) -> Vec<char> {
 
 fn cls() {
     print!("{esc}[2J{esc}[1;1H", esc = 27 as char);
-}
-
-pub fn stop() {
-    unsafe {
-        RUNNING = false;
-    }
 }
